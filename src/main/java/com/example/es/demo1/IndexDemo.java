@@ -14,7 +14,7 @@ import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CreateIndexDemo {
+public class IndexDemo {
 
     private final String INDEX = "student";
     private final String TYPE = "baseinfo";
