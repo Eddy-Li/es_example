@@ -18,6 +18,9 @@ public class ElasticsearchUtil {
 
     private static TransportClient transportClient;
 
+    public static final String INDEX = "student";
+    public static final String TYPE = "baseinfo";
+
     private ElasticsearchUtil() {
     }
 

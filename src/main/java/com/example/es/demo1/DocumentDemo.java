@@ -18,7 +18,7 @@ public class DocumentDemo {
     @Test
     public void getDocument() {
         TransportClient transportClient = ElasticsearchUtil.getClient();
-        GetRequestBuilder getRequestBuilder = transportClient.prepareGet(INDEX, TYPE, "002");
+        GetRequestBuilder getRequestBuilder = transportClient.prepareGet(ElasticsearchUtil.INDEX, ElasticsearchUtil.TYPE, "002");
         GetResponse getResponse = getRequestBuilder.get();
         Map<String, Object> source = getResponse.getSource();
         Map<String, Object> sourceAsMap = getResponse.getSourceAsMap();
@@ -30,9 +30,9 @@ public class DocumentDemo {
     @Test
     public void deleteDocument() {
         TransportClient transportClient = ElasticsearchUtil.getClient();
-        DeleteRequestBuilder deleteRequestBuilder = transportClient.prepareDelete(INDEX, TYPE, "002");
+        DeleteRequestBuilder deleteRequestBuilder = transportClient.prepareDelete(ElasticsearchUtil.INDEX, ElasticsearchUtil.TYPE, "002");
         DeleteResponse deleteResponse = deleteRequestBuilder.get();
-        RestStatus status = deleteResponse.status();
+        RestStatus status = deleteResponse.status();//"OK"
     }
 
 }
