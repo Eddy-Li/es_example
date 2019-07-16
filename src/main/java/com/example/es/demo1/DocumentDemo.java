@@ -4,6 +4,7 @@ import com.example.es.util.ElasticsearchUtil;
 import org.elasticsearch.action.delete.DeleteRequestBuilder;
 import org.elasticsearch.action.delete.DeleteResponse;
 import org.elasticsearch.action.get.*;
+import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.update.UpdateRequestBuilder;
@@ -18,13 +19,15 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 public class DocumentDemo {
     private final String INDEX = "student";
     private final String TYPE = "baseinfo";
 
     @Test
-    public void createDocument() {
+    public void createDocument1() {
         TransportClient transportClient = ElasticsearchUtil.getClient();
         IndexRequestBuilder indexRequestBuilder = transportClient.prepareIndex(INDEX, TYPE, "002");
         Map<String, Object> source = new HashMap<>();
@@ -35,6 +38,21 @@ public class DocumentDemo {
         indexRequestBuilder.setSource(source);
         IndexResponse indexResponse = indexRequestBuilder.get();
         System.out.println(indexResponse.status());
+    }
+
+    @Test
+    public void createDocument2() throws ExecutionException, InterruptedException {
+        TransportClient transportClient = ElasticsearchUtil.getClient();
+
+        Map<String, Object> source = new HashMap<>();
+        source.put("stuNo", "203080199");
+        source.put("name", "李四");
+        source.put("age", 100);
+        source.put("desc", "之前使用rest方式调用,不仅在大数据量导入的情况下会有数据丢失的情况,而且编写非常麻烦,就拿mapping举例,全是字符串拼接,一个斜杠少写了就over了,代码看上去很乱.");
+
+        IndexRequest request = new IndexRequest(ElasticsearchUtil.INDEX, ElasticsearchUtil.TYPE, UUID.randomUUID().toString());
+        request.source(source);
+        transportClient.index(request).get();
     }
 
     @Test

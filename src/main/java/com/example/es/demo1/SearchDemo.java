@@ -4,6 +4,7 @@ import com.example.es.util.ElasticsearchUtil;
 import org.elasticsearch.action.ActionFuture;
 import org.elasticsearch.action.ActionListener;
 import org.elasticsearch.action.index.IndexRequest;
+import org.elasticsearch.action.index.IndexRequestBuilder;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
@@ -68,7 +69,9 @@ public class SearchDemo {
             }
         };
         client.index(request, listener);
-
+        ActionFuture<IndexResponse> index = client.index(request);
+        IndexRequestBuilder indexRequestBuilder = client.prepareIndex();
+        indexRequestBuilder.get();
         while (true) {
 
         }
