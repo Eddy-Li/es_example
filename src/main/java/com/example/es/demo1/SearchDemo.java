@@ -4,9 +4,12 @@ import com.example.es.util.ElasticsearchUtil;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
+import org.elasticsearch.common.text.Text;
 import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
+import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
 import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
 
@@ -15,7 +18,7 @@ import java.util.Map;
 public class SearchDemo {
 
     @Test
-    public void search() {
+    public void search1() {
         TransportClient client = ElasticsearchUtil.getClient();
         SearchRequestBuilder builder = client.prepareSearch(ElasticsearchUtil.INDEX)
                 .setTypes(ElasticsearchUtil.TYPE)
@@ -39,7 +42,7 @@ public class SearchDemo {
     }
 
     @Test
-    public void prepare() throws Exception {
+    public void search2() throws Exception {
         TransportClient client = ElasticsearchUtil.getClient();
         SearchRequestBuilder searchRequestBuilder = client.prepareSearch(ElasticsearchUtil.INDEX);
         searchRequestBuilder.setFetchSource(true)//是否获取source
@@ -100,5 +103,38 @@ public class SearchDemo {
 
     }
 
+    //高亮
+    @Test
+    public void search3() {
+        TransportClient client = ElasticsearchUtil.getClient();
+        SearchRequestBuilder builder = client.prepareSearch(ElasticsearchUtil.INDEX)
+                .setTypes(ElasticsearchUtil.TYPE);
+
+        HighlightBuilder highlightBuilder = new HighlightBuilder().field("desc");
+        highlightBuilder.preTags("<span style=\\\"color:red\\\">")
+                .postTags("</span>")
+                .fragmentSize(20);
+        builder.highlighter(highlightBuilder);
+
+        TermQueryBuilder termQueryBuilder = QueryBuilders.termQuery("desc", "数据");
+        builder.setQuery(termQueryBuilder);
+
+        SearchResponse searchResponse = builder.get();
+        SearchHits hits = searchResponse.getHits();
+        long totalHits = hits.totalHits;
+        SearchHit[] searchHits = hits.getHits();
+        for (SearchHit searchHit : searchHits) {
+            String id = searchHit.getId();
+            Map<String, Object> source = searchHit.getSource();
+            System.out.println("id:" + id + "||" + source);
+            Map<String, HighlightField> highlightFields = searchHit.getHighlightFields();
+            System.out.println(highlightFields);
+            HighlightField highlightField = highlightFields.get("desc");
+            Text[] fragments = highlightField.getFragments();
+            for (Text fragment : fragments) {
+                System.out.println(fragment.toString());
+            }
+        }
+    }
 
 }
