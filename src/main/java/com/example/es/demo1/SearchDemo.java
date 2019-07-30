@@ -1,23 +1,16 @@
 package com.example.es.demo1;
 
 import com.example.es.util.ElasticsearchUtil;
-import org.elasticsearch.action.ActionFuture;
-import org.elasticsearch.action.ActionListener;
-import org.elasticsearch.action.index.IndexRequest;
-import org.elasticsearch.action.index.IndexRequestBuilder;
-import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequestBuilder;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
-import org.elasticsearch.index.query.QueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
+import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 public class SearchDemo {
 
@@ -46,34 +39,63 @@ public class SearchDemo {
     }
 
     @Test
-    public void prepare() throws ExecutionException, InterruptedException {
+    public void prepare() throws Exception {
         TransportClient client = ElasticsearchUtil.getClient();
-        long begin = System.currentTimeMillis();
-        IndexRequest request = new IndexRequest(ElasticsearchUtil.INDEX+"test", ElasticsearchUtil.TYPE, "010");
-        Map<String, Object> source = new HashMap<>();
-        source.put("stuNo", "203080110");
-        source.put("name", "平安");
-        source.put("age", 20);
-        source.put("desc", "平安平安平安平安平安平安平安平安平安平安平安平安平安");
-        request.source(source);
-        System.out.println(Thread.currentThread().getName() + ":main");
-        ActionListener<IndexResponse> listener = new ActionListener<IndexResponse>() {
-            @Override
-            public void onResponse(IndexResponse indexResponse) {
-                System.out.println(Thread.currentThread().getName() + ":onResponse");
-            }
+        SearchRequestBuilder searchRequestBuilder = client.prepareSearch(ElasticsearchUtil.INDEX);
+        searchRequestBuilder.setFetchSource(true)//是否获取source
+                .setFrom(0) //设置分页
+                .setSize(10)
+                .addSort("stuNo", SortOrder.ASC)
+                .addSort("age", SortOrder.DESC);//设置排序
 
-            @Override
-            public void onFailure(Exception e) {
-                System.out.println(Thread.currentThread().getName() + ":onFailure");
-            }
-        };
-        client.index(request, listener);
-        ActionFuture<IndexResponse> index = client.index(request);
-        IndexRequestBuilder indexRequestBuilder = client.prepareIndex();
-        indexRequestBuilder.get();
-        while (true) {
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        //filter效率比Query高，filter不计算评分
+        //filter:所有filter必须满足
+        boolQueryBuilder.filter(QueryBuilders.rangeQuery("age").gte(10).lte(90))
+                .filter(QueryBuilders.boolQuery().mustNot(QueryBuilders.termQuery("name", "平安")));
+        /*.minimumShouldMatch(1)*/ //当boolQuery中有should设置boolQueryBuilder中should最少满足几个
 
+        //must:全部必须满足
+        //boolQueryBuilder.must(QueryBuilders.termQuery());
+        //boolQueryBuilder.must(QueryBuilders.termQuery());
+        //mustNot:全部必须满足
+        //boolQueryBuilder.mustNot(QueryBuilders.termQuery());
+        //boolQueryBuilder.mustNot(QueryBuilders.termQuery());
+        //should:根据boolQueryBuilder.minimumShouldMatch(int)设置的数量来至少满足几个条件
+        //boolQueryBuilder.should(QueryBuilders.termQuery());
+        //boolQueryBuilder.should(QueryBuilders.termQuery());
+
+        //matchQuery : 先分词，然后再搜索匹配的词项
+//        MatchQueryBuilder matchQueryBuilder = QueryBuilders
+//                .matchQuery("fieldName", "context")
+//                .operator(Operator.OR)
+//                .minimumShouldMatch(String.valueOf(2));
+
+        //matchPhraseQuery
+//        MatchPhraseQueryBuilder matchPhraseQueryBuilder = QueryBuilders
+//                .matchPhraseQuery("fieldName", "phrase");
+
+        //prefixQuery
+//        PrefixQueryBuilder prefixQueryBuilder = QueryBuilders.prefixQuery("fieldName", "phrase");
+
+        //termQuery
+//        TermQueryBuilder termQueryBuilder = QueryBuilders
+//                .termQuery("fieldName", "term");
+
+        //termsQuery
+//        TermsQueryBuilder termsQueryBuilder = QueryBuilders
+//                .termsQuery("fieldName", "term1", "term2", "term3");
+
+        searchRequestBuilder.setQuery(boolQueryBuilder);
+
+        SearchResponse searchResponse = searchRequestBuilder.get();
+        SearchHits searchHits = searchResponse.getHits();
+        long totalHits = searchHits.totalHits;
+        SearchHit[] hits = searchHits.getHits();
+        for (SearchHit hit : hits) {
+            String id = hit.getId();
+            Map<String, Object> source = hit.getSource();
+            System.out.println("id:" + id + "||" + source);
         }
 
     }
