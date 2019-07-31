@@ -1,11 +1,12 @@
 package com.example.es.demo1;
 
 import com.example.es.util.ElasticsearchUtil;
-import org.elasticsearch.action.search.SearchRequestBuilder;
-import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.*;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.text.Text;
+import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.*;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
@@ -14,6 +15,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class SearchDemo {
 
@@ -136,5 +138,60 @@ public class SearchDemo {
             }
         }
     }
+
+    @Test
+    public void search4() throws InterruptedException, ExecutionException {
+        TransportClient client = ElasticsearchUtil.getClient();
+        SearchRequestBuilder builder = client.prepareSearch(ElasticsearchUtil.INDEX)
+                .setTypes(ElasticsearchUtil.TYPE)
+                .setScroll(TimeValue.timeValueMinutes(5))
+                .setSize(2);
+
+        MatchAllQueryBuilder query = QueryBuilders.matchAllQuery();
+        builder.setQuery(query);
+
+        SearchResponse searchResponse = builder.get();
+        String scrollId = searchResponse.getScrollId();
+        System.out.println(scrollId);
+        SearchHits searchHits = searchResponse.getHits();
+        SearchHit[] hits = searchHits.getHits();
+        for (SearchHit hit : hits) {
+            String id = hit.getId();
+            Map<String, Object> source = hit.getSource();
+            System.out.println("id:" + id + "||" + source);
+        }
+
+        System.out.println(".........................................");
+        Thread.sleep(100);
+        SearchResponse searchResponse1 = client.prepareSearchScroll(scrollId)
+                .setScroll(TimeValue.timeValueMinutes(5))
+                .get();
+        String scrollId1 = searchResponse1.getScrollId();
+        System.out.println(scrollId1);
+        System.out.println(scrollId.equals(scrollId1));
+        SearchHits searchHits1 = searchResponse1.getHits();
+        SearchHit[] hits1 = searchHits1.getHits();
+        for (SearchHit hit : hits1) {
+            String id = hit.getId();
+            Map<String, Object> source = hit.getSource();
+            System.out.println("id:" + id + "||" + source);
+        }
+
+        ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+        clearScrollRequest.addScrollId(scrollId);
+        clearScrollRequest.addScrollId(scrollId1);
+        ClearScrollResponse clearScrollResponse = client.clearScroll(clearScrollRequest).get();
+        boolean succeeded = clearScrollResponse.isSucceeded();
+        System.out.println(succeeded);
+
+    }
+
+    @Test
+    public void search5(){
+        TransportClient client = ElasticsearchUtil.getClient();
+
+
+    }
+
 
 }
