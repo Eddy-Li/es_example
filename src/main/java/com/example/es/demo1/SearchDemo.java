@@ -1,12 +1,14 @@
 package com.example.es.demo1;
 
 import com.example.es.util.ElasticsearchUtil;
-import org.elasticsearch.action.search.*;
+import org.elasticsearch.action.search.ClearScrollRequest;
+import org.elasticsearch.action.search.ClearScrollResponse;
+import org.elasticsearch.action.search.SearchRequestBuilder;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.index.query.*;
-import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
@@ -189,8 +191,8 @@ public class SearchDemo {
     @Test
     public void search5(){
         TransportClient client = ElasticsearchUtil.getClient();
-
-
+        //相当于sql中IS NOT NULL
+        ExistsQueryBuilder existsQueryBuilder = QueryBuilders.existsQuery("fieldName");
     }
 
 
